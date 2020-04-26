@@ -10,31 +10,73 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class DescentSolver implements Solver {
+public class TabouSolver implements Solver {
+    private int maxIter;
+    private int dureeTabou;
+
+    public TabouSolver(int maxIter, int dureeTabou) {
+        this.maxIter = maxIter;
+        this.dureeTabou = dureeTabou;
+    }
+
+    static class STabou {
+        final int tab[][];
+        final int dureeTabou;
+
+        STabou(int nbMachine, int nbJob, int dureeTabou) {
+            this.tab = new int[nbJob*nbMachine][nbJob*nbMachine];
+            this.dureeTabou = dureeTabou;
+        }
+
+        public void add(Utils.Swap swap, int k) {
+            tab[swap.t1][swap.t2] = k + dureeTabou;
+        }
+
+        public boolean check(Utils.Swap swap, int k) {
+            return k > tab[swap.t1][swap.t2];
+        }
+    }
+
     @Override
     public Result solve(Instance instance, long deadline) {
         Result s = new GloutonSolver(GloutonSolver.GloutonPriority.LRPT).solve(instance, deadline);
+        Result s_local = s;
         int best = s.schedule.makespan();
-        while (deadline - System.currentTimeMillis() > 1) {
-            boolean exit = true;
+        STabou sTabou = new STabou(instance.numMachines, instance.numJobs, dureeTabou);
+        int k = 0;
+        while (k < maxIter && deadline - System.currentTimeMillis() > 1) {
+            k++;
             ResourceOrder order = new ResourceOrder(s.schedule);
-            List<Utils.Block> blocksList = blocksOfCriticalPath(order);
+            ResourceOrder order_local = new ResourceOrder(s_local.schedule);
+            List<Utils.Block> blocksList = blocksOfCriticalPath(order_local);
+            Utils.Swap bestSwap = null;
+            int best_local = -1;
             for (Utils.Block block : blocksList) {
                 List<Utils.Swap> swapList = neighbors(block);
                 for (Utils.Swap swap : swapList) {
-                    ResourceOrder copy = order.copy();
-                    swap.applyOn(copy);
-                    int makespan = copy.toSchedule().makespan();
-                    if (makespan < best) {
-                        if (exit) exit = false;
-                        order = copy;
-                        best = makespan;
+                    if (sTabou.check(swap, k)) {
+                        ResourceOrder copy = order_local.copy();
+                        swap.applyOn(copy);
+                        int makespan = copy.toSchedule().makespan();
+                        if (best_local == -1 || makespan < best_local) {
+                            bestSwap = swap;
+                            best_local = makespan;
+                            order_local = copy;
+                            if (makespan < best) {
+                                best = makespan;
+                                order = copy;
+                            }
+                        }
                     }
                 }
             }
-            if (!exit) s = new Result(order.instance, order.toSchedule(), Result.ExitCause.Blocked);
-            else return s;
+            if (bestSwap != null) {
+                sTabou.add(bestSwap, k);
+            }
+            s_local = new Result(order_local.instance, order_local.toSchedule(), Result.ExitCause.Blocked);
+            s = new Result(order.instance, order.toSchedule(), Result.ExitCause.Blocked);
         }
+        if (k == maxIter) return s;
         return new Result(s.instance, s.schedule, Result.ExitCause.Timeout);
     }
 

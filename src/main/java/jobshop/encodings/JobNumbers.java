@@ -14,8 +14,10 @@ public class JobNumbers extends Encoding {
     /** A numJobs * numTasks array containing the representation by job numbers. */
     public final int[] jobs;
 
-    /** In case the encoding is only partially filled, indicates the index of the first
-     * element of `jobs` that has not been set yet. */
+    /**
+     * In case the encoding is only partially filled, indicates the index of the
+     * first element of `jobs` that has not been set yet.
+     */
     public int nextToSet = 0;
 
     public JobNumbers(Instance instance) {
@@ -33,7 +35,7 @@ public class JobNumbers extends Encoding {
         // for each job indicates which is the next task to be scheduled
         int[] nextOnJob = new int[instance.numJobs];
 
-        while(Arrays.stream(nextOnJob).anyMatch(t -> t < instance.numTasks)) {
+        while (Arrays.stream(nextOnJob).anyMatch(t -> t < instance.numTasks)) {
             Task next = IntStream
                     // for all jobs numbers
                     .range(0, instance.numJobs)
@@ -42,8 +44,7 @@ public class JobNumbers extends Encoding {
                     // only keep valid tasks (some jobs have no task left to be executed)
                     .filter(t -> t.task < instance.numTasks)
                     // select the task with the earliest execution time
-                    .min(Comparator.comparing(t -> schedule.startTime(t.job, t.task)))
-                    .get();
+                    .min(Comparator.comparing(t -> schedule.startTime(t.job, t.task))).get();
 
             this.jobs[nextToSet++] = next.job;
             nextOnJob[next.job] += 1;
@@ -62,11 +63,11 @@ public class JobNumbers extends Encoding {
         int[][] startTimes = new int[instance.numJobs][instance.numTasks];
 
         // compute the earliest start time for every task of every job
-        for(int job : jobs) {
+        for (int job : jobs) {
             int task = nextTask[job];
             int machine = instance.machine(job, task);
             // earliest start time for this task
-            int est = task == 0 ? 0 : startTimes[job][task-1] + instance.duration(job, task-1);
+            int est = task == 0 ? 0 : startTimes[job][task - 1] + instance.duration(job, task - 1);
             est = Math.max(est, nextFreeTimeResource[machine]);
 
             startTimes[job][task] = est;
@@ -79,6 +80,6 @@ public class JobNumbers extends Encoding {
 
     @Override
     public String toString() {
-        return Arrays.toString(Arrays.copyOfRange(jobs,0, nextToSet));
+        return Arrays.toString(Arrays.copyOfRange(jobs, 0, nextToSet));
     }
 }

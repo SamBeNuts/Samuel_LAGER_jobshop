@@ -15,7 +15,7 @@ public class DebuggingMain {
             // construit une solution dans la représentation par
             // numéro de jobs : [0 1 1 0 0 1]
             // Note : cette solution a aussi été vue dans les exercices (section 3.3)
-            //        mais on commençait à compter à 1 ce qui donnait [1 2 2 1 1 2]
+            // mais on commençait à compter à 1 ce qui donnait [1 2 2 1 1 2]
             JobNumbers enc = new JobNumbers(instance);
             enc.jobs[enc.nextToSet++] = 0;
             enc.jobs[enc.nextToSet++] = 1;
@@ -27,8 +27,6 @@ public class DebuggingMain {
             System.out.println("\nENCODING: " + enc);
 
             Schedule sched = enc.toSchedule();
-            // TODO: make it print something meaningful
-            // by implementing the toString() method
             System.out.println("SCHEDULE: " + sched);
             System.out.println("VALID: " + sched.isValid());
             System.out.println("MAKESPAN: " + sched.makespan());

@@ -8,13 +8,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-
 import jobshop.solvers.*;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
-
 
 public class Main {
 
@@ -24,27 +22,28 @@ public class Main {
         solvers = new HashMap<>();
         solvers.put("basic", new BasicSolver());
         solvers.put("random", new RandomSolver());
-        // add new solvers here
+        solvers.put("glouton-SPT", new GloutonSolver(GloutonSolver.GloutonPriority.SPT));
+        solvers.put("glouton-LPT", new GloutonSolver(GloutonSolver.GloutonPriority.LPT));
+        solvers.put("glouton-SRPT", new GloutonSolver(GloutonSolver.GloutonPriority.SRPT));
+        solvers.put("glouton-LRPT", new GloutonSolver(GloutonSolver.GloutonPriority.LRPT));
+        solvers.put("glouton-EST_SPT", new GloutonSolver(GloutonSolver.GloutonPriority.EST_SPT));
+        solvers.put("glouton-EST_LPT", new GloutonSolver(GloutonSolver.GloutonPriority.EST_LPT));
+        solvers.put("glouton-EST_SRPT", new GloutonSolver(GloutonSolver.GloutonPriority.EST_SRPT));
+        solvers.put("glouton-EST_LRPT", new GloutonSolver(GloutonSolver.GloutonPriority.EST_LRPT));
+        solvers.put("descent", new DescentSolver());
+        solvers.put("tabou", new TabouSolver(100, 10));
     }
 
-
     public static void main(String[] args) {
-        ArgumentParser parser = ArgumentParsers.newFor("jsp-solver").build()
-                .defaultHelp(true)
+        ArgumentParser parser = ArgumentParsers.newFor("jsp-solver").build().defaultHelp(true)
                 .description("Solves jobshop problems.");
 
-        parser.addArgument("-t", "--timeout")
-                .setDefault(1L)
-                .type(Long.class)
+        parser.addArgument("-t", "--timeout").setDefault(1L).type(Long.class)
                 .help("Solver timeout in seconds for each instance");
-        parser.addArgument("--solver")
-                .nargs("+")
-                .required(true)
+        parser.addArgument("--solver").nargs("+").required(true)
                 .help("Solver(s) to use (space separated if more than one)");
 
-        parser.addArgument("--instance")
-                .nargs("+")
-                .required(true)
+        parser.addArgument("--instance").nargs("+").required(true)
                 .help("Instance(s) to solve (space separated if more than one)");
 
         Namespace ns = null;
@@ -60,19 +59,20 @@ public class Main {
         long solveTimeMs = ns.getLong("timeout") * 1000;
 
         List<String> solversToTest = ns.getList("solver");
-        for(String solverName : solversToTest) {
-            if(!solvers.containsKey(solverName)) {
+        for (String solverName : solversToTest) {
+            if (!solvers.containsKey(solverName)) {
                 System.err.println("ERROR: Solver \"" + solverName + "\" is not avalaible.");
                 System.err.println("       Available solvers: " + solvers.keySet().toString());
-                System.err.println("       You can provide your own solvers by adding them to the `Main.solvers` HashMap.");
+                System.err.println(
+                        "       You can provide your own solvers by adding them to the `Main.solvers` HashMap.");
                 System.exit(1);
             }
         }
         List<String> instancePrefixes = ns.getList("instance");
         List<String> instances = new ArrayList<>();
-        for(String instancePrefix : instancePrefixes) {
+        for (String instancePrefix : instancePrefixes) {
             List<String> matches = BestKnownResult.instancesMatching(instancePrefix);
-            if(matches.isEmpty()) {
+            if (matches.isEmpty()) {
                 System.err.println("ERROR: instance prefix \"" + instancePrefix + "\" does not match any instance.");
                 System.err.println("       available instances: " + Arrays.toString(BestKnownResult.instances));
                 System.exit(1);
@@ -84,27 +84,26 @@ public class Main {
         float[] distances = new float[solversToTest.size()];
 
         try {
-            output.print(  "                         ");
-            for(String s : solversToTest)
+            output.print("                         ");
+            for (String s : solversToTest)
                 output.printf("%-30s", s);
             output.println();
             output.print("instance size  best      ");
-            for(String s : solversToTest) {
+            for (String s : solversToTest) {
                 output.print("runtime makespan ecart        ");
             }
             output.println();
 
-
-            for(String instanceName : instances) {
+            for (String instanceName : instances) {
                 int bestKnown = BestKnownResult.of(instanceName);
-
 
                 Path path = Paths.get("instances/", instanceName);
                 Instance instance = Instance.fromFile(path);
 
-                output.printf("%-8s %-5s %4d      ",instanceName, instance.numJobs +"x"+instance.numTasks, bestKnown);
+                output.printf("%-8s %-5s %4d      ", instanceName, instance.numJobs + "x" + instance.numTasks,
+                        bestKnown);
 
-                for(int solverId = 0 ; solverId < solversToTest.size() ; solverId++) {
+                for (int solverId = 0; solverId < solversToTest.size(); solverId++) {
                     String solverName = solversToTest.get(solverId);
                     Solver solver = solvers.get(solverName);
                     long start = System.currentTimeMillis();
@@ -112,7 +111,7 @@ public class Main {
                     Result result = solver.solve(instance, deadline);
                     long runtime = System.currentTimeMillis() - start;
 
-                    if(!result.schedule.isValid()) {
+                    if (!result.schedule.isValid()) {
                         System.err.println("ERROR: solver returned an invalid schedule");
                         System.exit(1);
                     }
@@ -130,13 +129,10 @@ public class Main {
 
             }
 
-
             output.printf("%-8s %-5s %4s      ", "AVG", "-", "-");
-            for(int solverId = 0 ; solverId < solversToTest.size() ; solverId++) {
+            for (int solverId = 0; solverId < solversToTest.size(); solverId++) {
                 output.printf("%7.1f %8s %5.1f        ", runtimes[solverId], "-", distances[solverId]);
             }
-
-
 
         } catch (Exception e) {
             e.printStackTrace();

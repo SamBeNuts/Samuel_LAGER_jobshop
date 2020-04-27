@@ -7,6 +7,7 @@ import jobshop.encodings.ResourceOrder;
 import jobshop.encodings.Task;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class GloutonSolver implements Solver {
   public enum GloutonPriority {
@@ -33,7 +34,8 @@ public class GloutonSolver implements Solver {
         }
       }
     }
-    int[] startAt = new int[instance.numMachines];
+    int[][] endAt = new int[instance.numJobs][instance.numTasks];
+    int[] releaseTimeOfMachine = new int[instance.numMachines];
     while (taskToScheduled.size() > 0) {
       Task task;
       switch (priority) {
@@ -50,16 +52,16 @@ public class GloutonSolver implements Solver {
           task = LRPT(instance, taskToScheduled, timeRemaining);
           break;
         case EST_SPT:
-          task = EST_SPT(instance, taskToScheduled, startAt);
+          task = EST_SPT(instance, taskToScheduled, endAt, releaseTimeOfMachine);
           break;
         case EST_LPT:
-          task = EST_LPT(instance, taskToScheduled, startAt);
+          task = EST_LPT(instance, taskToScheduled, endAt, releaseTimeOfMachine);
           break;
         case EST_SRPT:
-          task = EST_SRPT(instance, taskToScheduled, startAt, timeRemaining);
+          task = EST_SRPT(instance, taskToScheduled, endAt, releaseTimeOfMachine, timeRemaining);
           break;
         default:
-          task = EST_LRPT(instance, taskToScheduled, startAt, timeRemaining);
+          task = EST_LRPT(instance, taskToScheduled, endAt, releaseTimeOfMachine, timeRemaining);
           break;
       }
       int machine = instance.machine(task.job, task.task);
@@ -70,13 +72,16 @@ public class GloutonSolver implements Solver {
     return new Result(instance, sol.toSchedule(), Result.ExitCause.Blocked);
   }
 
-  private ArrayList<Task> EST(Instance inst, ArrayList<Task> tasks, int[] startAt) {
+  private ArrayList<Task> EST(Instance inst, ArrayList<Task> tasks, int[][] endAt, int[] releaseTimeOfMachine) {
     ArrayList<Task> reducer = new ArrayList<>();
-    reducer.add(tasks.get(0));
-    int best = startAt[inst.machine(tasks.get(0).job, tasks.get(0).task)];
+    Task t = tasks.get(0);
+    reducer.add(t);
+    int est = t.task == 0 ? 0 : endAt[t.job][t.task-1];
+    int best = Math.max(releaseTimeOfMachine[inst.machine(t.job, t.task)], est);
     for (int i = 1; i < tasks.size(); i++) {
-      Task t = tasks.get(i);
-      int start = startAt[inst.machine(t.job, t.task)];
+      t = tasks.get(i);
+      est = t.task == 0 ? 0 : endAt[t.job][t.task-1];
+      int start = Math.max(releaseTimeOfMachine[inst.machine(t.job, t.task)], est);
       if (start < best) {
         reducer.clear();
         reducer.add(t);
@@ -87,13 +92,16 @@ public class GloutonSolver implements Solver {
     return reducer;
   }
 
-  private int[] EST_RPT(Instance inst, ArrayList<Task> tasks, int[] remaining, int[] startAt) {
+  private int[] EST_RPT(Instance inst, ArrayList<Task> tasks, int[] remaining, int[][] endAt, int[] releaseTimeOfMachine) {
     int[] reducer = new int[remaining.length];
-    int best = startAt[inst.machine(tasks.get(0).job, tasks.get(0).task)];
-    reducer[tasks.get(0).job] = remaining[tasks.get(0).job];
+    Task t = tasks.get(0);
+    int est = t.task == 0 ? 0 : endAt[t.job][t.task-1];
+    int best = Math.max(releaseTimeOfMachine[inst.machine(t.job, t.task)], est);
+    reducer[t.job] = remaining[t.job];
     for (int i = 1; i < tasks.size(); i++) {
-      Task t = tasks.get(i);
-      int start = startAt[inst.machine(t.job, t.task)];
+      t = tasks.get(i);
+      est = t.task == 0 ? 0 : endAt[t.job][t.task-1];
+      int start = Math.max(releaseTimeOfMachine[inst.machine(t.job, t.task)], est);
       if (start < best) {
         reducer = new int[remaining.length];
         reducer[tasks.get(i).job] = remaining[tasks.get(i).job];
@@ -160,35 +168,43 @@ public class GloutonSolver implements Solver {
     return tasks.remove(best);
   }
 
-  private Task EST_SPT(Instance inst, ArrayList<Task> tasks, int[] startAt) {
-    ArrayList<Task> reduce = EST(inst, tasks, startAt);
+  private Task EST_SPT(Instance inst, ArrayList<Task> tasks, int[][] endAt, int[] releaseTimeOfMachine) {
+    ArrayList<Task> reduce = EST(inst, tasks, endAt, releaseTimeOfMachine);
     Task task = SPT(inst, reduce);
-    startAt[inst.machine(task.job, task.task)] += inst.duration(task.job, task.task);
+    EST_actualize(inst, task, endAt, releaseTimeOfMachine);
     tasks.remove(task);
     return task;
   }
 
-  private Task EST_LPT(Instance inst, ArrayList<Task> tasks, int[] startAt) {
-    ArrayList<Task> reduce = EST(inst, tasks, startAt);
+  private Task EST_LPT(Instance inst, ArrayList<Task> tasks, int[][] endAt, int[] releaseTimeOfMachine) {
+    ArrayList<Task> reduce = EST(inst, tasks, endAt, releaseTimeOfMachine);
     Task task = LPT(inst, reduce);
-    startAt[inst.machine(task.job, task.task)] += inst.duration(task.job, task.task);
+    EST_actualize(inst, task, endAt, releaseTimeOfMachine);
     tasks.remove(task);
     return task;
   }
 
-  private Task EST_SRPT(Instance inst, ArrayList<Task> tasks, int[] startAt, int[] remaining) {
-    int[] reduce = EST_RPT(inst, tasks, remaining, startAt);
+  private Task EST_SRPT(Instance inst, ArrayList<Task> tasks, int[][] endAt, int[] releaseTimeOfMachine, int[] remaining) {
+    int[] reduce = EST_RPT(inst, tasks, remaining, endAt, releaseTimeOfMachine);
     Task task = SRPT(inst, tasks, reduce);
-    startAt[inst.machine(task.job, task.task)] += inst.duration(task.job, task.task);
+    EST_actualize(inst, task, endAt, releaseTimeOfMachine);
     remaining[task.job] = reduce[task.job];
     return task;
   }
 
-  private Task EST_LRPT(Instance inst, ArrayList<Task> tasks, int[] startAt, int[] remaining) {
-    int[] reduce = EST_RPT(inst, tasks, remaining, startAt);
+  private Task EST_LRPT(Instance inst, ArrayList<Task> tasks, int[][] endAt, int[] releaseTimeOfMachine, int[] remaining) {
+    int[] reduce = EST_RPT(inst, tasks, remaining, endAt, releaseTimeOfMachine);
     Task task = LRPT(inst, tasks, reduce);
-    startAt[inst.machine(task.job, task.task)] += inst.duration(task.job, task.task);
+    EST_actualize(inst, task, endAt, releaseTimeOfMachine);
     remaining[task.job] = reduce[task.job];
     return task;
+  }
+
+  private void EST_actualize(Instance inst, Task task, int[][] endAt, int[] releaseTimeOfMachine) {
+    int machine = inst.machine(task.job, task.task);
+    int duration =  + inst.duration(task.job, task.task);
+    int est = task.task == 0 ? 0 : endAt[task.job][task.task - 1];
+    endAt[task.job][task.task] = Math.max(releaseTimeOfMachine[machine], est) + duration;
+    releaseTimeOfMachine[machine] = endAt[task.job][task.task];
   }
 }

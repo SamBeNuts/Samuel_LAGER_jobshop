@@ -39,7 +39,7 @@ public class TabouSolver implements Solver {
 
     @Override
     public Result solve(Instance instance, long deadline) {
-        Result s = new GloutonSolver(GloutonSolver.GloutonPriority.LRPT).solve(instance, deadline);
+        Result s = new GloutonSolver(GloutonSolver.GloutonPriority.EST_LRPT).solve(instance, deadline);
         Result s_local = s;
         int best = s.schedule.makespan();
         STabou sTabou = new STabou(instance.numMachines, instance.numJobs, dureeTabou);

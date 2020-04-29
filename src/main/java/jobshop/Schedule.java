@@ -131,6 +131,14 @@ public class Schedule {
         return path;
     }
 
+    /*
+     * Return the Schedule as a string
+     * Example :
+     * Job 1: aaabbbccc
+     * Job 2: cccaa bbb
+     * Où a, b et c sont les numéros de machines sur lesquelles s'exécutent la tâche
+     * et sont répétés autant de fois que la durée de la tâche
+     */
     @Override
     public String toString() {
         StringBuilder str = new StringBuilder();

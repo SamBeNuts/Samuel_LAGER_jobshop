@@ -3,6 +3,10 @@ package jobshop.solvers;
 import jobshop.encodings.ResourceOrder;
 import jobshop.encodings.Task;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 public class Utils {
     /** A block represents a subsequence of the critical path such that all tasks in it execute on the same machine.
      * This class identifies a block in a ResourceOrder representation.
@@ -66,5 +70,37 @@ public class Utils {
             order.tasksByMachine[machine][t1] = order.tasksByMachine[machine][t2];
             order.tasksByMachine[machine][t2] = t;
         }
+    }
+
+    /** Returns a list of all blocks of the critical path. */
+    static List<Block> blocksOfCriticalPath(ResourceOrder order) {
+        List<Task> criticalPath = order.toSchedule().criticalPath();
+        List<Block> blocksList = new ArrayList<>();
+        Task t = criticalPath.get(0);
+        int machine = order.instance.machine(criticalPath.get(0));
+        int firstTask = Arrays.asList(order.tasksByMachine[machine]).indexOf(t);
+        int lastTask = firstTask;
+        for (int i = 1; i < criticalPath.size(); i++) {
+            t = criticalPath.get(i);
+            if (machine == order.instance.machine(t)) {
+                lastTask++;
+            } else {
+                if (firstTask != lastTask) {
+                    blocksList.add(new Block(machine, firstTask, lastTask));
+                }
+                machine = order.instance.machine(t);
+                firstTask = Arrays.asList(order.tasksByMachine[machine]).indexOf(t);
+                lastTask = firstTask;
+            }
+        }
+        return blocksList;
+    }
+
+    /** For a given block, return the possible swaps for the Nowicki and Smutnicki neighborhood */
+    static List<Swap> neighbors(Block block) {
+        List<Swap> swapList = new ArrayList<>();
+        swapList.add(new Swap(block.machine, block.firstTask, block.firstTask+1));
+        if (block.firstTask != block.lastTask+1) swapList.add(new Swap(block.machine, block.lastTask-1, block.lastTask));
+        return swapList;
     }
 }

@@ -33,7 +33,7 @@ public class Instance {
         return machines[job][task];
     }
     public int machine(Task t) {
-        return this.machine(t.job, t.task);
+        return machine(t.job, t.task);
     }
 
     /** among the tasks of the given job, returns the task index that uses the given machine. */

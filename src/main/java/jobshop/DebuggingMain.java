@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.nio.file.Paths;
 
 public class DebuggingMain {
-
     public static void main(String[] args) {
         try {
             // load the aaa1 instance
@@ -35,6 +34,5 @@ public class DebuggingMain {
             e.printStackTrace();
             System.exit(1);
         }
-
     }
 }

@@ -85,7 +85,7 @@ public class ResourceOrder extends Encoding {
             if (schedulable.isPresent()) {
                 // we found a schedulable task, lets call it t
                 Task t = schedulable.get();
-                int machine = instance.machine(t.job, t.task);
+                int machine = instance.machine(t);
 
                 // compute the earliest start time (est) of the task
                 int est = t.task == 0 ? 0 : startTimes[t.job][t.task - 1] + instance.duration(t.job, t.task - 1);
@@ -96,7 +96,7 @@ public class ResourceOrder extends Encoding {
                 nextToScheduleByJob[t.job]++;
                 nextToScheduleByMachine[machine]++;
                 // increase the release time of the machine
-                releaseTimeOfMachine[machine] = est + instance.duration(t.job, t.task);
+                releaseTimeOfMachine[machine] = est + instance.duration(t);
             } else {
                 // no tasks are schedulable, there is no solution for this resource ordering
                 return null;

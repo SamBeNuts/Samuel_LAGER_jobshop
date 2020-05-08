@@ -1,6 +1,7 @@
 package jobshop;
 
 import jobshop.encodings.JobNumbers;
+import jobshop.encodings.ResourceOrder;
 
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -10,11 +11,6 @@ public class DebuggingMain {
         try {
             // load the aaa1 instance
             Instance instance = Instance.fromFile(Paths.get("instances/aaa1"));
-
-            // construit une solution dans la représentation par
-            // numéro de jobs : [0 1 1 0 0 1]
-            // Note : cette solution a aussi été vue dans les exercices (section 3.3)
-            // mais on commençait à compter à 1 ce qui donnait [1 2 2 1 1 2]
             JobNumbers enc = new JobNumbers(instance);
             enc.jobs[enc.nextToSet++] = 0;
             enc.jobs[enc.nextToSet++] = 1;
@@ -22,13 +18,16 @@ public class DebuggingMain {
             enc.jobs[enc.nextToSet++] = 0;
             enc.jobs[enc.nextToSet++] = 0;
             enc.jobs[enc.nextToSet++] = 1;
+            ResourceOrder enc2 = new ResourceOrder(enc.toSchedule());
+            System.out.println("\nJobNumbers:\n" + enc);
+            System.out.println("Schedule:" + enc.toSchedule());
+            System.out.println("\nResourceOrder:\n" + enc2);
+            System.out.println("Schedule:" + enc2.toSchedule());
 
-            System.out.println("\nENCODING: " + enc);
-
-            Schedule sched = enc.toSchedule();
-            System.out.println("SCHEDULE: " + sched);
-            System.out.println("VALID: " + sched.isValid());
-            System.out.println("MAKESPAN: " + sched.makespan());
+            //Schedule sched = enc.toSchedule();
+            //System.out.println("SCHEDULE: " + sched);
+            //System.out.println("VALID: " + sched.isValid());
+            //System.out.println("MAKESPAN: " + sched.makespan());
 
         } catch (IOException e) {
             e.printStackTrace();

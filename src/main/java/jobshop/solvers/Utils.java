@@ -74,24 +74,34 @@ public class Utils {
 
     /** Returns a list of all blocks of the critical path. */
     static List<Block> blocksOfCriticalPath(ResourceOrder order) {
+        //on récupère le chemin critique
         List<Task> criticalPath = order.toSchedule().criticalPath();
+        //la liste des Block du chemin critique
         List<Block> blocksList = new ArrayList<>();
         Task t = criticalPath.get(0);
-        int machine = order.instance.machine(criticalPath.get(0));
+        int machine = order.instance.machine(t);
+        //on récupère la position dans l'ordre d'exécution de la machine
         int firstTask = Arrays.asList(order.tasksByMachine[machine]).indexOf(t);
         int lastTask = firstTask;
         for (int i = 1; i < criticalPath.size(); i++) {
             t = criticalPath.get(i);
+            //on vérifie que les deux tâches sont effectuées sur la même machine
             if (machine == order.instance.machine(t)) {
                 lastTask++;
             } else {
+                //on vérifie si un Block existe
                 if (firstTask != lastTask) {
                     blocksList.add(new Block(machine, firstTask, lastTask));
                 }
+                //on reset les variables
                 machine = order.instance.machine(t);
                 firstTask = Arrays.asList(order.tasksByMachine[machine]).indexOf(t);
                 lastTask = firstTask;
             }
+        }
+        //on vérifie si un Block existe à la fin du chemin
+        if (firstTask != lastTask) {
+            blocksList.add(new Block(machine, firstTask, lastTask));
         }
         return blocksList;
     }
@@ -100,6 +110,8 @@ public class Utils {
     static List<Swap> neighbors(Block block) {
         List<Swap> swapList = new ArrayList<>();
         swapList.add(new Swap(block.machine, block.firstTask, block.firstTask+1));
+        //si la différence entre 2 indices est supérieure à 1, alors la taille du Block est supérieure à 2
+        //il y a donc un deuxième Swap possible entre les deux dernières tâches
         if (block.firstTask != block.lastTask+1) swapList.add(new Swap(block.machine, block.lastTask-1, block.lastTask));
         return swapList;
     }

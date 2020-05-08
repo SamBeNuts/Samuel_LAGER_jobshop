@@ -26,20 +26,23 @@ public class TabouSolver implements Solver {
         final int tab[][];
         //la durée des interdictions
         final int dureeTabou;
+        //nombre de jobs
+        final int nbJob;
 
         STabou(int nbMachine, int nbJob, int dureeTabou) {
             this.tab = new int[nbJob*nbMachine][nbJob*nbMachine];
             this.dureeTabou = dureeTabou;
+            this.nbJob = nbJob;
         }
 
         //actualise l'itération à partir duquelle le swap est possible
         public void add(Utils.Swap swap, int k) {
-            tab[swap.t1][swap.t2] = k + dureeTabou;
+            tab[swap.t1+nbJob*swap.machine][swap.t2+nbJob*swap.machine] = k + dureeTabou;
         }
 
         //vérifie si le swap est possible
         public boolean check(Utils.Swap swap, int k) {
-            return k > tab[swap.t1][swap.t2];
+            return k > tab[swap.t1+nbJob*swap.machine][swap.t2+nbJob*swap.machine];
         }
     }
 
@@ -75,7 +78,13 @@ public class TabouSolver implements Solver {
                         //on copie l'ordre de s et on applique le swap
                         ResourceOrder copy = order_local.copy();
                         swap.applyOn(copy);
-                        int makespan = copy.toSchedule().makespan();
+                        int makespan;
+                        try {
+                            makespan = copy.toSchedule().makespan();
+                        } catch (Exception e) {
+                            //le swap n'est pas possible, on est bloqué
+                            return s;
+                        }
                         //si le swap retourne un meilleur résultat que le résultat local on actualise s_local
                         if (best_local == -1 || makespan < best_local) {
                             bestSwap = swap;

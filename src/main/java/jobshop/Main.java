@@ -3,10 +3,7 @@ package jobshop;
 import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 import jobshop.solvers.*;
 import net.sourceforge.argparse4j.ArgumentParsers;
@@ -31,7 +28,7 @@ public class Main {
         solvers.put("glouton-EST_SRPT", new GloutonSolver(GloutonSolver.GloutonPriority.EST_SRPT));
         solvers.put("glouton-EST_LRPT", new GloutonSolver(GloutonSolver.GloutonPriority.EST_LRPT));
         solvers.put("descent", new DescentSolver());
-        solvers.put("tabou", new TabouSolver(100, 10));
+        solvers.put("tabou", new TabouSolver(500, 10));
     }
 
     public static void main(String[] args) {
@@ -59,6 +56,15 @@ public class Main {
         long solveTimeMs = ns.getLong("timeout") * 1000;
 
         List<String> solversToTest = ns.getList("solver");
+        //test tabou
+        /*int[] maxIter = {10000};
+        int[] dureeTabou = {0, 1, 5, 10, 20};
+        for (int x : maxIter) {
+            for (int y : dureeTabou) {
+                solvers.put("tabou(" + x + ',' + y + ')', new TabouSolver(x, y));
+                solversToTest.add("tabou(" + x + ',' + y + ')');
+            }
+        }*/
         for (String solverName : solversToTest) {
             if (!solvers.containsKey(solverName)) {
                 System.err.println("ERROR: Solver \"" + solverName + "\" is not avalaible.");

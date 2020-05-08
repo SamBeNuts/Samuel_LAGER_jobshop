@@ -10,7 +10,7 @@ public class DescentSolver implements Solver {
     @Override
     public Result solve(Instance instance, long deadline) {
         //on initialise s avec la solution retournée par l'algo Glouton
-        Result s = new GloutonSolver(GloutonSolver.GloutonPriority.LRPT).solve(instance, deadline);
+        Result s = new GloutonSolver(GloutonSolver.GloutonPriority.EST_LRPT).solve(instance, deadline);
         int best = s.schedule.makespan();
         //tant que la deadline n'est pas atteinte
         while (deadline - System.currentTimeMillis() > 1) {

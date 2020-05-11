@@ -29,6 +29,8 @@ public class Main {
         solvers.put("glouton-EST_LRPT", new GloutonSolver(GloutonSolver.GloutonPriority.EST_LRPT));
         solvers.put("descent", new DescentSolver());
         solvers.put("tabou", new TabouSolver(500, 10));
+        solvers.put("brute_force_jn", new BruteForceSolver(true));
+        solvers.put("brute_force_ro", new BruteForceSolver(false));
     }
 
     public static void main(String[] args) {

@@ -3,6 +3,7 @@ package jobshop.encodings;
 import jobshop.Encoding;
 import jobshop.Instance;
 import jobshop.Schedule;
+import jobshop.solvers.BruteForceSolver;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -77,6 +78,8 @@ public class JobNumbers extends Encoding {
 
         return new Schedule(instance, startTimes);
     }
+
+    public void printSolutions() { new BruteForceSolver(true, true).solve(instance, 0); }
 
     @Override
     public String toString() {

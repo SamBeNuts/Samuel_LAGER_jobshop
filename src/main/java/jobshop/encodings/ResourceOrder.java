@@ -3,6 +3,7 @@ package jobshop.encodings;
 import jobshop.Encoding;
 import jobshop.Instance;
 import jobshop.Schedule;
+import jobshop.solvers.BruteForceSolver;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -110,6 +111,8 @@ public class ResourceOrder extends Encoding {
     public ResourceOrder copy() {
         return new ResourceOrder(this.toSchedule());
     }
+
+    public void printSolutions() { new BruteForceSolver(false, true).solve(instance, 0); }
 
     @Override
     public String toString() {
